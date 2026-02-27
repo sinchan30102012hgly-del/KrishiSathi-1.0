@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<head>
+    <title>KrishiSahayak 1.0 - Your Smart Farming Assistant</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            background: url('https://images.unsplash.com/photo-1574943320219-553eb213f72d?w=1200&h=800&fit=crop') center/cover fixed no-repeat;
+            background-attachment: fixed;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.3);
+            pointer-events: none;
+            z-index: -1;
+        }
+        h1 {
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+            color: white;
+            text-align: center;
+            padding: 30px 20px;
+            font-size: 3em;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            margin: 0;
+            letter-spacing: 2px;
+            border-bottom: 4px solid #229954;
+            animation: fadeInDown 0.8s ease-out;
+        }
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        nav {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+        .nav-left, .nav-right {
+            display: flex;
+            gap: 30px;
+            align-items: center;
+        }
+        nav a {
+            color: white;
+            text-decoration: none;
+            font-size: 1.1em;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            padding: 8px 15px;
+            border-radius: 4px;
+        }
+        nav a:hover {
+            background: #2ecc71;
+            color: white;
+            transform: scale(1.05);
+        }
+        .nav-right a {
+            border: 2px solid #2ecc71;
+            padding: 8px 20px;
+        }
+        .nav-right a:hover {
+            background: #2ecc71;
+        }
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+        .dropdown-toggle {
+            cursor: pointer;
+        }
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            background: rgba(0, 0, 0, 0.95);
+            min-width: 250px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+            z-index: 1000;
+            top: 100%;
+            left: 0;
+            margin-top: 5px;
+            border-radius: 4px;
+            border: 2px solid #2ecc71;
+        }
+        .dropdown-menu a {
+            color: white;
+            padding: 12px 20px;
+            text-decoration: none;
+            display: block;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            border-bottom: 1px solid rgba(46, 204, 113, 0.3);
+        }
+        .dropdown-menu a:last-child {
+            border-bottom: none;
+        }
+        .dropdown-menu a:hover {
+            background: #2ecc71;
+            padding-left: 25px;
+        }
+        .dropdown:hover .dropdown-menu {
+            display: block;
+        }
+        .dropdown:hover .dropdown-toggle {
+            background: #2ecc71;
+        }
+        .home-section {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: calc(100vh - 200px);
+            padding: 40px 20px;
+        }
+        .home-content {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 50px 40px;
+            border-radius: 10px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            max-width: 600px;
+        }
+        .home-content h2 {
+            color: #2ecc71;
+            font-size: 2.5em;
+            margin-bottom: 20px;
+        }
+        .home-content p {
+            color: #333;
+            font-size: 1.2em;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin-top: 40px;
+            width: 100%;
+        }
+        .product-card {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+            transition: all 0.3s ease;
+            text-align: center;
+            text-decoration: none;
+            color: inherit;
+            border-left: 4px solid #2ecc71;
+        }
+        .product-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 8px 25px rgba(46, 204, 113, 0.3);
+            border-left-color: #229954;
+        }
+        .product-card h3 {
+            color: #2ecc71;
+            font-size: 1.3em;
+            margin-bottom: 12px;
+        }
+        .product-card p {
+            color: #666;
+            font-size: 0.95em;
+            line-height: 1.5;
+        }
+        /* Crop prediction section styles */
+        .crop-section {
+            max-width: 1000px;
+            margin: 40px auto;
+            padding: 30px 20px;
+            background: rgba(255,255,255,0.95);
+            border-radius: 10px;
+            box-shadow: 0 6px 28px rgba(0,0,0,0.15);
+            text-align: center;
+        }
+        .crop-section h2 {
+            color: #2ecc71;
+            margin-bottom: 18px;
+            font-size: 1.6em;
+        }
+        .crop-input {
+            width: 60%;
+            max-width: 420px;
+            padding: 12px 14px;
+            border: 2px solid #2ecc71;
+            border-radius: 8px;
+            font-size: 1em;
+            margin-right: 10px;
+        }
+        .crop-btn {
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+            color: white;
+            border: none;
+            padding: 12px 18px;
+            font-size: 1em;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 6px 18px rgba(46,204,113,0.25);
+        }
+        .crop-btn:disabled { opacity: 0.7; cursor: not-allowed; }
+        .loader {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border: 3px solid rgba(0,0,0,0.1);
+            border-top-color: #2ecc71;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            vertical-align: middle;
+            margin-left: 8px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .crop-result {
+            margin-top: 18px;
+            text-align: left;
+            white-space: pre-wrap;
+            color: #333;
+            background: #fff;
+            padding: 18px;
+            border-radius: 8px;
+            border: 1px solid #e6e6e6;
+        }
+        .info-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            padding: 40px 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .info-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+            transition: all 0.3s ease;
+            text-align: center;
+            text-decoration: none;
+            color: inherit;
+            border-top: 4px solid #2ecc71;
+        }
+        .info-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(46, 204, 113, 0.3);
+        }
+        .info-card h3 {
+            color: #2ecc71;
+            font-size: 1.8em;
+            margin-bottom: 15px;
+        }
+        .info-card p {
+            color: #555;
+            font-size: 0.95em;
+            line-height: 1.6;
+        }
+        /* Crop Prediction Page Section */
+        .crop-section {
+            max-width: 1000px;
+            margin: 40px auto;
+            padding: 30px 20px;
+            background: rgba(255,255,255,0.95);
+            border-radius: 10px;
+            box-shadow: 0 6px 28px rgba(0,0,0,0.15);
+            text-align: center;
+        }
+        .crop-section h2 {
+            color: #2ecc71;
+            margin-bottom: 18px;
+            font-size: 1.6em;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="nav-left">
+            <a href="#home" data-i18n="nav.home">Home</a>
+            <div class="dropdown">
+                <a href="#products" class="dropdown-toggle" data-i18n="nav.products">Products ▼</a>
+                <div class="dropdown-menu">
+                    <a href="crop-prediction.html" data-i18n="nav.crop">Crop Prediction from Weather</a>
+                    <a href="disease-identification.html" data-i18n="nav.disease">Plant Disease Identification</a>
+                    <a href="ai-companion.html" data-i18n="nav.ai">Farming AI Companion</a>
+                </div>
+            </div>
+            <a href="#contact" data-i18n="nav.contact">Contact Us</a>
+            <a href="#about" data-i18n="nav.about">About</a>
+        </div>
+        <div class="nav-right">
+            <select id="langSelect" style="padding:6px 10px;border:1px solid #2ecc71;border-radius:6px;background:#fff;color:#2ecc71">
+                <option value="en">English</option>
+                <option value="bn">বাংলা</option>
+                <option value="hi">हिन्दी</option>
+            </select>
+        </div>
+    </nav>
+    <h1 data-i18n="home.title">🌾 KrishiSahayak - Smart Farming Companion 🌾</h1>
+    
+    <div class="home-section" id="home">
+        <div class="home-content">
+            <h2 data-i18n="home.welcome">Welcome to KrishiSahayak</h2>
+            <p data-i18n="home.description">Your intelligent partner for modern, sustainable farming. Leverage AI-powered insights to optimize crop yields and make informed agricultural decisions.</p>
+        </div>
+    </div>
+
+    <div class="products-grid">
+        <a href="crop-prediction.html" class="product-card">
+            <h3 data-i18n="products.crop.title">🌱 Crop Prediction from Weather</h3>
+            <p data-i18n="products.crop.desc">Predict crop yields based on weather patterns and seasonal data. Make informed decisions for better harvests.</p>
+        </a>
+        <a href="disease-identification.html" class="product-card">
+            <h3 data-i18n="products.disease.title">🔍 Plant Disease Identification</h3>
+            <p data-i18n="products.disease.desc">Identify plant diseases early using AI. Get treatment recommendations to protect your crops.</p>
+        </a>
+        <a href="ai-companion.html" class="product-card">
+            <h3 data-i18n="products.ai.title">🤖 Farming AI Companion</h3>
+            <p data-i18n="products.ai.desc">Your personal AI assistant for all farming needs. Get expert advice and real-time support.</p>
+        </a>
+    </div>
+
+    <div class="info-section">
+        <a href="#contact" class="info-card">
+            <h3 data-i18n="info.contact.title">📋 Contact Us</h3>
+            <p data-i18n="info.contact.desc">Have questions or feedback? We'd love to hear from you. Get in touch with our team to learn more about KrishiSathi and how we can help your farming operations.</p>
+        </a>
+        <a href="#about" class="info-card">
+            <h3 data-i18n="info.about.title">🌰 About</h3>
+            <p data-i18n="info.about.desc">Discover the story behind KrishiSathi. Learn about our mission to revolutionize agriculture through AI and technology, and join our open-source community.</p>
+        </a>
+    </div>
+
+
+
+    <script>
+        var translations = {
+            en: {
+                title: "KrishiSahayak 1.0 - Your Smart Farming Assistant",
+                "nav.home": "Home",
+                "nav.products": "Products ▼",
+                "nav.crop": "Crop Prediction from Weather",
+                "nav.disease": "Plant Disease Identification",
+                "nav.ai": "Farming AI Companion",
+                "nav.contact": "Contact Us",
+                "nav.about": "About",
+                "home.title": "🌾 KrishiSahayak - Smart Farming Companion 🌾",
+                "home.welcome": "Welcome to KrishiSahayak",
+                "home.description": "Your intelligent partner for modern, sustainable farming. Leverage AI-powered insights to optimize crop yields and make informed agricultural decisions.",
+                "products.crop.title": "🌱 Crop Prediction from Weather",
+                "products.crop.desc": "Predict crop yields based on weather patterns and seasonal data. Make informed decisions for better harvests.",
+                "products.disease.title": "🔍 Plant Disease Identification",
+                "products.disease.desc": "Identify plant diseases early using AI. Get treatment recommendations to protect your crops.",
+                "products.ai.title": "🤖 Farming AI Companion",
+                "products.ai.desc": "Your personal AI assistant for all farming needs. Get expert advice and real-time support.",
+                "info.contact.title": "📋 Contact Us",
+                "info.contact.desc": "Have questions or feedback? We'd love to hear from you. Get in touch with our team to learn more about KrishiSathi and how we can help your farming operations.",
+                "info.about.title": "🌰 About",
+                "info.about.desc": "Discover the story behind KrishiSathi. Learn about our mission to revolutionize agriculture through AI and technology, and join our open-source community."
+            },
+            bn: {
+                title: "KrishiSahayak 1.0 - আপনার স্মার্ট কৃষি সহায়ক",
+                "nav.home": "হোম",
+                "nav.products": "পণ্যসমূহ ▼",
+                "nav.crop": "আবহাওয়া থেকে ফসল পূর্বাভাস",
+                "nav.disease": "উদ্ভিদ রোগ শনাক্তকরণ",
+                "nav.ai": "কৃষি AI সহচর",
+                "nav.contact": "যোগাযোগ",
+                "nav.about": "সম্পর্কে",
+                "home.title": "🌾 KrishiSahayak - স্মার্ট কৃষি সহচর 🌾",
+                "home.welcome": "KrishiSahayak-এ স্বাগতম",
+                "home.description": "আধুনিক, টেকসই চাষাবাদের জন্য আপনার বুদ্ধিমান সহচর। AI-চালিত অন্তর্দৃষ্টি ব্যবহার করে ফসল ফলন অনুকূল করুন এবং তথ্যভিত্তিক কৃষিগত সিদ্ধান্ত নিন।",
+                "products.crop.title": "🌱 আবহাওয়া থেকে ফসল পূর্বাভাস",
+                "products.crop.desc": "আবহাওয়ার ধরণ ও মৌসুমি তথ্যের ভিত্তিতে ফসলের পূর্বাভাস দিন। উন্নত ফসলের জন্য সচেতন সিদ্ধান্ত নিন।",
+                "products.disease.title": "🔍 উদ্ভিদ রোগ শনাক্তকরণ",
+                "products.disease.desc": "AI ব্যবহার করে উদ্ভিদের রোগ দ্রুত শনাক্ত করুন। আপনার ফসল রক্ষায় চিকিৎসার পরামর্শ পান।",
+                "products.ai.title": "🤖 কৃষি AI সহচর",
+                "products.ai.desc": "আপনার সকল কৃষি প্রয়োজনের ব্যক্তিগত AI সহকারী। বিশেষজ্ঞ পরামর্শ ও রিয়েল-টাইম সহায়তা পান।",
+                "info.contact.title": "📋 আমাদের সাথে যোগাযোগ করুন",
+                "info.contact.desc": "প্রশ্ন বা মতামত আছে? আমরা শুনতে আগ্রহী। KrishiSathi সম্পর্কে আরও জানতে এবং কীভাবে আমরা আপনার চাষাবাদে সাহায্য করতে পারি তা জানতে আমাদের দলের সঙ্গে যোগাযোগ করুন।",
+                "info.about.title": "🌰 সম্পর্কে",
+                "info.about.desc": "KrishiSathi-এর পেছনের গল্প জানুন। AI ও প্রযুক্তির মাধ্যমে কৃষিতে বিপ্লব আনার আমাদের মিশন সম্পর্কে জানুন এবং আমাদের ওপেন-সোর্স কমিউনিটিতে যোগ দিন।"
+            },
+            hi: {
+                title: "KrishiSahayak 1.0 - आपका स्मार्ट खेती सहायक",
+                "nav.home": "होम",
+                "nav.products": "उत्पाद ▼",
+                "nav.crop": "मौसम से फसल पूर्वानुमान",
+                "nav.disease": "पौध रोग पहचान",
+                "nav.ai": "फार्मिंग AI साथी",
+                "nav.contact": "संपर्क",
+                "nav.about": "परिचय",
+                "home.title": "🌾 KrishiSahayak - स्मार्ट खेती साथी 🌾",
+                "home.welcome": "KrishiSahayak में आपका स्वागत है",
+                "home.description": "आधुनिक, टिकाऊ खेती के लिए आपका बुद्धिमान साथी। फसल उपज को अनुकूलित करने और सूचित कृषि निर्णय लेने के लिए AI-संचालित इनसाइट्स का उपयोग करें।",
+                "products.crop.title": "🌱 मौसम से फसल पूर्वानुमान",
+                "products.crop.desc": "मौसम के पैटर्न और मौसमी डेटा के आधार पर फसल का अनुमान लगाएँ। बेहतर उपज के लिए सूचित निर्णय लें।",
+                "products.disease.title": "🔍 पौध रोग पहचान",
+                "products.disease.desc": "AI की मदद से पौध रोग जल्दी पहचानें। अपनी फसलों की रक्षा के लिए उपचार सुझाव प्राप्त करें।",
+                "products.ai.title": "🤖 फार्मिंग AI साथी",
+                "products.ai.desc": "आपकी सभी खेती आवश्यकताओं के लिए व्यक्तिगत AI सहायक। विशेषज्ञ सलाह और रियल-टाइम सहायता प्राप्त करें।",
+                "info.contact.title": "📋 हमसे संपर्क करें",
+                "info.contact.desc": "कोई प्रश्न या सुझाव? हम सुनना चाहेंगे। KrishiSathi के बारे में अधिक जानने और आपकी खेती में कैसे सहायता कर सकते हैं, इसके लिए हमारी टीम से संपर्क करें।",
+                "info.about.title": "🌰 परिचय",
+                "info.about.desc": "KrishiSathi की कहानी जानें। AI और तकनीक के माध्यम से कृषि में क्रांति लाने के हमारे मिशन के बारे में जानें और हमारे ओपन-सोर्स समुदाय से जुड़ें।"
+            }
+        };
+        function applyTranslations(lang) {
+            var dict = translations[lang] || translations.en;
+            document.title = dict.title || translations.en.title;
+            var nodes = document.querySelectorAll("[data-i18n]");
+            for (var i = 0; i < nodes.length; i++) {
+                var key = nodes[i].getAttribute("data-i18n");
+                var val = dict[key] || translations.en[key] || nodes[i].textContent;
+                nodes[i].textContent = val;
+            }
+            var phNodes = document.querySelectorAll("[data-i18n-placeholder]");
+            for (var j = 0; j < phNodes.length; j++) {
+                var pkey = phNodes[j].getAttribute("data-i18n-placeholder");
+                var pval = dict[pkey] || translations.en[pkey];
+                if (pval) phNodes[j].setAttribute("placeholder", pval);
+            }
+        }
+        (function () {
+            var select = document.getElementById("langSelect");
+            var saved = localStorage.getItem("lang") || "en";
+            select.value = saved;
+            applyTranslations(saved);
+            select.addEventListener("change", function (e) {
+                var lang = e.target.value;
+                localStorage.setItem("lang", lang);
+                applyTranslations(lang);
+            });
+        })();
+    </script>
+</body>
+</html>
