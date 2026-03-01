@@ -1,3 +1,3 @@
 window.__ENV__ = {
-    GEMINI_API_KEY: "your_gemini_api_key_here"
+    GEMINI_API_KEY: "AIzaSyBmA2d8z2X4j89hdGyLP9gk7W7wlKEbvMo"
 };
