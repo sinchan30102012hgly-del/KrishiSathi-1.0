@@ -50,6 +50,90 @@
             gap: 30px;
             align-items: center;
         }
+        .api-key-btn {
+            background: #f39c12;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            font-size: 0.9em;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .api-key-btn:hover {
+            background: #e67e22;
+        }
+        .api-key-btn.active {
+            background: #27ae60;
+        }
+        .api-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+        .api-modal.show {
+            display: flex;
+        }
+        .api-modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+        .api-modal h3 {
+            color: #2ecc71;
+            margin-bottom: 15px;
+        }
+        .api-modal p {
+            color: #666;
+            margin-bottom: 20px;
+            font-size: 0.95em;
+            line-height: 1.5;
+        }
+        .api-input-wrapper {
+            margin-bottom: 20px;
+        }
+        .api-input-wrapper label {
+            display: block;
+            color: #333;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        .api-input-wrapper input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #2ecc71;
+            border-radius: 8px;
+            font-size: 1em;
+            box-sizing: border-box;
+        }
+        .api-input-wrapper input:focus {
+            outline: none;
+            border-color: #229954;
+        }
+        .api-modal-btns {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+        .api-modal-btns .btn {
+            padding: 10px 20px;
+        }
+        .api-modal-btns .btn-secondary {
+            background: #95a5a6;
+        }
+        .api-modal-btns .btn-secondary:hover {
+            background: #7f8c8d;
+        }
         nav a {
             color: white;
             text-decoration: none;
@@ -326,6 +410,7 @@
             <a href="index.html#about" data-i18n="nav.about">About</a>
         </div>
         <div class="nav-right">
+            <button class="api-key-btn" id="apiKeyBtn" onclick="showApiKeyModal()">🔑 API Key</button>
             <select id="langSelect" style="padding:6px 10px;border:1px solid #2ecc71;border-radius:6px;background:#fff;color:#2ecc71">
                 <option value="en">English</option>
                 <option value="bn">বাংলা</option>
@@ -333,6 +418,22 @@
             </select>
         </div>
     </nav>
+
+    <!-- API Key Modal -->
+    <div class="api-modal" id="apiModal">
+        <div class="api-modal-content">
+            <h3>🔑 Set Gemini API Key</h3>
+            <p>Enter your Gemini API key to enable AI features. Your key will be saved in your browser for future visits.</p>
+            <div class="api-input-wrapper">
+                <label for="apiKeyInput">Gemini API Key:</label>
+                <input type="password" id="apiKeyInput" placeholder="Enter your API key (e.g., AIzaSy...)" />
+            </div>
+            <div class="api-modal-btns">
+                <button class="btn btn-secondary" onclick="closeApiKeyModal()">Cancel</button>
+                <button class="btn" onclick="saveApiKey()">Save Key</button>
+            </div>
+        </div>
+    </div>
     <h1 data-i18n="page.title">🤖 Farming AI Companion</h1>
 
     <div class="page-section">
@@ -441,13 +542,85 @@
             });
         })();
     </script>
+    <script src="env.js"></script>
     <script>
-        const API_KEY = 'AIzaSyCUaOMladsxkjHkvAk8nVgldYwMCFO68IY';
         const chatMessages = document.getElementById('chatMessages');
         const userInput = document.getElementById('userInput');
         const sendBtn = document.getElementById('sendBtn');
         const voiceBtn = document.getElementById('voiceBtn');
         let recognition = null;
+
+        // API Key Modal Functions
+        function getGeminiApiKey() {
+            // First check localStorage (user-entered key)
+            const storedKey = localStorage.getItem('gemini_api_key');
+            if (storedKey) {
+                return storedKey;
+            }
+            // Then check env.js (for GitHub Pages deployment)
+            if (window.__ENV__ && window.__ENV__.GEMINI_API_KEY) {
+                return window.__ENV__.GEMINI_API_KEY;
+            }
+            // If no key found, show modal
+            showApiKeyModal();
+            throw new Error('Please enter your Gemini API key');
+        }
+
+        function showApiKeyModal() {
+            const modal = document.getElementById('apiModal');
+            const input = document.getElementById('apiKeyInput');
+            const storedKey = localStorage.getItem('gemini_api_key');
+            if (storedKey) {
+                input.value = storedKey;
+            }
+            modal.classList.add('show');
+        }
+
+        function closeApiKeyModal() {
+            document.getElementById('apiModal').classList.remove('show');
+        }
+
+        function saveApiKey() {
+            const input = document.getElementById('apiKeyInput');
+            const apiKey = input.value.trim();
+            if (!apiKey) {
+                alert('Please enter a valid API key');
+                return;
+            }
+            localStorage.setItem('gemini_api_key', apiKey);
+            closeApiKeyModal();
+            updateApiKeyButton();
+            alert('API key saved successfully!');
+        }
+
+        function updateApiKeyButton() {
+            const btn = document.getElementById('apiKeyBtn');
+            const hasKey = localStorage.getItem('gemini_api_key') || (window.__ENV__ && window.__ENV__.GEMINI_API_KEY);
+            if (hasKey) {
+                btn.classList.add('active');
+                btn.textContent = '✓ API Key';
+            } else {
+                btn.classList.remove('active');
+                btn.textContent = '🔑 API Key';
+            }
+        }
+
+        // Check API key on page load
+        (function() {
+            updateApiKeyBtn();
+        })();
+
+        function updateApiKeyBtn() {
+            const btn = document.getElementById('apiKeyBtn');
+            const hasKey = localStorage.getItem('gemini_api_key') || (window.__ENV__ && window.__ENV__.GEMINI_API_KEY);
+            if (hasKey) {
+                btn.classList.add('active');
+                btn.textContent = '✓ API Key';
+            } else {
+                btn.classList.remove('active');
+                btn.textContent = '🔑 API Key';
+            }
+        }
 
         function formatText(text) {
             text = text.replace(/&/g, '&amp;').replace(/</g, '<').replace(/>/g, '>');
