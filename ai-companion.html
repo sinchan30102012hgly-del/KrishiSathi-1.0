@@ -256,6 +256,32 @@
             color: #333;
             border: 1px solid #e6e6e6;
         }
+        .message-controls {
+            display: flex;
+            align-items: flex-end;
+        }
+        .message-speak-btn {
+            background: linear-gradient(135deg, #16a085, #1abc9c);
+            color: white;
+            border: none;
+            border-radius: 999px;
+            padding: 7px 12px;
+            font-size: 0.8em;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 12px rgba(26, 188, 156, 0.25);
+            white-space: nowrap;
+        }
+        .message-speak-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(26, 188, 156, 0.35);
+        }
+        .message-speak-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
         .chat-input-area {
             display: flex;
             gap: 10px;
@@ -476,7 +502,10 @@
                 "chat.greeting": "👋 Hello! I'm your Farming AI Companion. Ask me anything about agriculture, crop management, pest control, weather, or farming techniques!",
                 "chat.placeholder": "Ask your farming question...",
                 "chat.send": "Send",
-                "chat.tip": "💡 Tip: Ask about crops, diseases, weather, soil, irrigation, fertilizers, and farming best practices."
+                "chat.tip": "💡 Tip: Ask about crops, diseases, weather, soil, irrigation, fertilizers, and farming best practices.",
+                "chat.read_aloud": "Read Aloud",
+                "chat.stop_reading": "Stop Reading",
+                "chat.speech_not_supported": "Read aloud is not supported in your browser. Please use Chrome or Edge."
             },
             bn: {
                 title: "কৃষি AI সহচর - KrishiSahayak",
@@ -527,6 +556,9 @@
                 var pkey = phNodes[j].getAttribute("data-i18n-placeholder");
                 var pval = dict[pkey] || translations.en[pkey];
                 if (pval) phNodes[j].setAttribute("placeholder", pval);
+            }
+            if (typeof refreshSpeakButtons === 'function') {
+                refreshSpeakButtons();
             }
         }
         (function () {
@@ -652,6 +684,116 @@
             return langMap[lang] || 'en-US';
         }
 
+        const speechSupported = 'speechSynthesis' in window && typeof SpeechSynthesisUtterance !== 'undefined';
+        let activeSpeakButton = null;
+        let isSpeakingMessage = false;
+
+        function getUiText(key) {
+            const lang = localStorage.getItem('lang') || 'en';
+            const dict = translations[lang] || translations.en;
+            return dict[key] || translations.en[key] || key;
+        }
+
+        function pickVoiceForLanguage(locale) {
+            const voices = window.speechSynthesis.getVoices();
+            if (!voices || !voices.length) return null;
+            const normalized = locale.toLowerCase();
+            const baseLang = normalized.split('-')[0];
+            return (
+                voices.find(v => v.lang && v.lang.toLowerCase() === normalized) ||
+                voices.find(v => v.lang && v.lang.toLowerCase().startsWith(baseLang)) ||
+                null
+            );
+        }
+
+        function updateSingleSpeakButton(button, speaking) {
+            if (!button) return;
+            button.disabled = !speechSupported;
+            if (!speechSupported) {
+                button.textContent = getUiText('chat.read_aloud');
+                button.title = getUiText('chat.speech_not_supported');
+                return;
+            }
+            button.title = '';
+            button.textContent = speaking ? getUiText('chat.stop_reading') : getUiText('chat.read_aloud');
+        }
+
+        function refreshSpeakButtons() {
+            const buttons = document.querySelectorAll('.message-speak-btn');
+            for (var i = 0; i < buttons.length; i++) {
+                const button = buttons[i];
+                const isActive = isSpeakingMessage && activeSpeakButton === button;
+                updateSingleSpeakButton(button, isActive);
+            }
+        }
+
+        function stopMessageSpeech() {
+            if (!speechSupported) return;
+            window.speechSynthesis.cancel();
+            isSpeakingMessage = false;
+            activeSpeakButton = null;
+            refreshSpeakButtons();
+        }
+
+        function toggleMessageSpeech(button, textToRead) {
+            if (!speechSupported) {
+                alert(getUiText('chat.speech_not_supported'));
+                return;
+            }
+            const cleanText = (textToRead || '').trim();
+            if (!cleanText) return;
+            const shouldStopCurrent = (window.speechSynthesis.speaking || isSpeakingMessage) && activeSpeakButton === button;
+            if (shouldStopCurrent) {
+                stopMessageSpeech();
+                return;
+            }
+            stopMessageSpeech();
+            const utterance = new SpeechSynthesisUtterance(cleanText);
+            utterance.lang = getLanguageCode();
+            const voice = pickVoiceForLanguage(utterance.lang);
+            if (voice) {
+                utterance.voice = voice;
+            }
+            utterance.onstart = function() {
+                activeSpeakButton = button;
+                isSpeakingMessage = true;
+                refreshSpeakButtons();
+            };
+            utterance.onend = function() {
+                isSpeakingMessage = false;
+                activeSpeakButton = null;
+                refreshSpeakButtons();
+            };
+            utterance.onerror = function() {
+                isSpeakingMessage = false;
+                activeSpeakButton = null;
+                refreshSpeakButtons();
+            };
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function attachSpeakButtonToMessage(messageDiv) {
+            if (!messageDiv || messageDiv.querySelector('.message-speak-btn')) return;
+            const contentDiv = messageDiv.querySelector('.message-content');
+            if (!contentDiv) return;
+            const controlsDiv = document.createElement('div');
+            controlsDiv.className = 'message-controls';
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'message-speak-btn';
+            button.addEventListener('click', function() {
+                toggleMessageSpeech(button, contentDiv.textContent);
+            });
+            controlsDiv.appendChild(button);
+            messageDiv.appendChild(controlsDiv);
+            updateSingleSpeakButton(button, false);
+        }
+
+        if (speechSupported) {
+            window.speechSynthesis.onvoiceschanged = refreshSpeakButtons;
+        }
+        window.addEventListener('beforeunload', stopMessageSpeech);
+
         function startVoiceInput() {
             if (!recognition) {
                 recognition = initSpeechRecognition();
@@ -714,6 +856,7 @@
             const message = userInput.value.trim();
             if (!message) return;
 
+            stopMessageSpeech();
             addMessage(message, 'user');
             userInput.value = '';
             userInput.style.height = 'auto';
@@ -775,10 +918,21 @@
             }
             
             messageDiv.appendChild(contentDiv);
+            if (sender === 'ai') {
+                attachSpeakButtonToMessage(messageDiv);
+            }
             chatMessages.appendChild(messageDiv);
             
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
+
+        (function initAiMessageReadAloud() {
+            const aiMessages = chatMessages.querySelectorAll('.message.ai');
+            for (var i = 0; i < aiMessages.length; i++) {
+                attachSpeakButtonToMessage(aiMessages[i]);
+            }
+            refreshSpeakButtons();
+        })();
     </script>
 </body>
 </html>

@@ -53,6 +53,10 @@
         .result-box.show { display: block; }
         .disease-name { color: #2ecc71; font-size: 1.3em; font-weight: bold; margin-bottom: 12px; }
         .disease-description { color: #555; line-height: 1.8; margin-bottom: 15px; }
+        .result-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+        .result-actions .btn { margin: 0; }
+        .speak-btn { background: linear-gradient(135deg, #16a085, #1abc9c); box-shadow: 0 6px 18px rgba(26, 188, 156, 0.25); }
+        .speak-btn:hover { box-shadow: 0 8px 24px rgba(26, 188, 156, 0.35); }
         .treatment-list { background: white; padding: 15px; border-radius: 8px; margin-top: 15px; }
         .treatment-list h4 { color: #2ecc71; margin-bottom: 10px; }
         .treatment-list li { color: #666; margin: 8px 0; margin-left: 20px; }
@@ -117,13 +121,16 @@
             <div class="upload-sub"><span data-i18n="upload.selected">Selected file:</span> <span id="selectedFileName"></span></div>
         </div>
 
-        <button class="btn" onclick="analyzePlant()" data-i18n="actions.analyze">Analyze Plant Disease</button>
+        <button id="analyzeBtn" class="btn" onclick="analyzePlant()" data-i18n="actions.analyze">Analyze Plant Disease</button>
         <span id="analysisLoader" style="display:none" class="loader"></span>
 
         <div id="resultBox" class="result-box">
             <div class="disease-name" id="diseaseName"></div>
             <div class="disease-description" id="diseaseDescription"></div>
-            <button class="btn" onclick="resetAnalysis()" data-i18n="actions.another">Analyze Another Plant</button>
+            <div class="result-actions">
+                <button id="speakResultBtn" class="btn speak-btn" type="button" onclick="toggleResultSpeech()" data-i18n="actions.read_aloud">Read Aloud</button>
+                <button class="btn" onclick="resetAnalysis()" data-i18n="actions.another">Analyze Another Plant</button>
+            </div>
         </div>
 
         <p class="footer" data-i18n="footer.note">Note: This tool uses AI to analyze images. For professional diagnosis, consult an agricultural expert.</p>
@@ -131,7 +138,7 @@
 
     <script>
         var translations = {
-            en: { title: "Plant Disease Identification - KrishiSahayak", "nav.home": "Home", "nav.products": "Products ▼", "nav.crop": "Crop Prediction from Weather", "nav.disease": "Plant Disease Identification", "nav.ai": "Farming AI Companion", "nav.contact": "Contact Us", "nav.about": "About", "page.title": "🔍 Plant Disease Identification", "page.subtitle": "Identify Plant Diseases with AI", "page.description": "Upload a photo of your plant leaf to identify diseases. Our AI will analyze the image and provide treatment recommendations.", "upload.text": "📷 Click to upload or drag image here", "upload.sub": "Supported formats: JPG, PNG, WebP", "upload.selected": "Selected file:", "actions.analyze": "Analyze Plant Disease", "results.treatment": "Recommended Treatment:", "actions.another": "Analyze Another Plant", "footer.note": "Note: This tool uses AI to analyze images. For professional diagnosis, consult an agricultural expert." },
+            en: { title: "Plant Disease Identification - KrishiSahayak", "nav.home": "Home", "nav.products": "Products ▼", "nav.crop": "Crop Prediction from Weather", "nav.disease": "Plant Disease Identification", "nav.ai": "Farming AI Companion", "nav.contact": "Contact Us", "nav.about": "About", "page.title": "🔍 Plant Disease Identification", "page.subtitle": "Identify Plant Diseases with AI", "page.description": "Upload a photo of your plant leaf to identify diseases. Our AI will analyze the image and provide treatment recommendations.", "upload.text": "📷 Click to upload or drag image here", "upload.sub": "Supported formats: JPG, PNG, WebP", "upload.selected": "Selected file:", "actions.analyze": "Analyze Plant Disease", "results.treatment": "Recommended Treatment:", "actions.another": "Analyze Another Plant", "actions.read_aloud": "Read Aloud", "actions.stop_reading": "Stop Reading", "alerts.speech_not_supported": "Read aloud is not supported in your browser. Please use Chrome or Edge.", "footer.note": "Note: This tool uses AI to analyze images. For professional diagnosis, consult an agricultural expert." },
             bn: { title: "উদ্ভিদ রোগ শনাক্তকরণ - KrishiSahayak", "nav.home": "হোম", "nav.products": "পণ্যসমূহ ▼", "nav.crop": "আবহাওয়া থেকে ফসল পূর্বাভাস", "nav.disease": "উদ্ভিদ রোগ শনাক্তকরণ", "nav.ai": "কৃষি AI সহচর", "nav.contact": "যোগাযোগ", "nav.about": "সম্পর্কে", "page.title": "🔍 উদ্ভিদ রোগ শনাক্তকরণ", "page.subtitle": "AI দিয়ে উদ্ভিদের রোগ শনাক্ত করুন", "page.description": "উদ্ভিদের পাতাের ছবি আপলোড করুন। আমাদের AI ছবি বিশ্লেষণ করে চিকিৎসার পরামর্শ দেবে।", "upload.text": "📷 আপলোড করতে ক্লিক করুন বা এখানে ছবি টানুন", "upload.sub": "সমর্থিত ফরম্যাট: JPG, PNG, WebP", "upload.selected": "নির্বাচিত ফাইল:", "actions.analyze": "উদ্ভিদের রোগ বিশ্লেষণ", "results.treatment": "প্রস্তাবিত চিকিৎসা:", "actions.another": "আরেকটি উদ্ভিদ বিশ্লেষণ করুন", "footer.note": "দ্রষ্টব্য: এই টুলটি ছবি বিশ্লেষণে AI ব্যবহার করে। পেশাদার পরামর্শের জন্য কৃষি বিশেষজ্ঞের সঙ্গে পরামর্শ করুন।" },
             hi: { title: "पौध रोग पहचान - KrishiSahayak", "nav.home": "होम", "nav.products": "उत्पाद ▼", "nav.crop": "मौसम से फसल पूर्वानुमान", "nav.disease": "पौध रोग पहचान", "nav.ai": "फार्मिंग AI साथी", "nav.contact": "संपर्क", "nav.about": "परिचय", "page.title": "🔍 पौध रोग पहचान", "page.subtitle": "AI से पौध रोग पहचानें", "page.description": "अपने पौधे की पत्ती की फोटो अपलोड करें। हमारा AI छवि का विश्लेषण कर उपचार सुझाव देगा।", "upload.text": "📷 अपलोड करने के लिए क्लिक करें या यहाँ खींचें", "upload.sub": "समर्थित फॉर्मेट: JPG, PNG, WebP", "upload.selected": "चयनित फ़ाइल:", "actions.analyze": "पौध रोग विश्लेषण", "results.treatment": "सुझाया गया उपचार:", "actions.another": "दूसरा पौधा विश्लेषित करें", "footer.note": "नोट: यह टूल छवियों का विश्लेषण करने के लिए AI का उपयोग करता है। पेशेवर निदान के लिए कृषि विशेषज्ञ से परामर्श करें।" }
         };
@@ -142,6 +149,7 @@
             for (var i = 0; i < nodes.length; i++) { var key = nodes[i].getAttribute("data-i18n"); var val = dict[key] || translations.en[key] || nodes[i].textContent; nodes[i].textContent = val; }
             var phNodes = document.querySelectorAll("[data-i18n-placeholder]");
             for (var j = 0; j < phNodes.length; j++) { var pkey = phNodes[j].getAttribute("data-i18n-placeholder"); var pval = dict[pkey] || translations.en[pkey]; if (pval) phNodes[j].setAttribute("placeholder", pval); }
+            if (typeof updateSpeakButtonState === 'function') { updateSpeakButtonState(); }
         }
         (function () {
             var select = document.getElementById("langSelect");
@@ -201,6 +209,97 @@
             return text;
         }
 
+        const diseaseDescriptionEl = document.getElementById('diseaseDescription');
+        const speakResultBtn = document.getElementById('speakResultBtn');
+        const speechSupported = 'speechSynthesis' in window && typeof SpeechSynthesisUtterance !== 'undefined';
+        let isSpeakingResult = false;
+
+        function getLanguageCode() {
+            const lang = localStorage.getItem('lang') || 'en';
+            const langMap = { en: 'en-US', bn: 'bn-BD', hi: 'hi-IN' };
+            return langMap[lang] || 'en-US';
+        }
+
+        function getUiText(key) {
+            const lang = localStorage.getItem('lang') || 'en';
+            const dict = translations[lang] || translations.en;
+            return dict[key] || translations.en[key] || key;
+        }
+
+        function updateSpeakButtonState() {
+            if (!speakResultBtn) return;
+            const hasResultText = !!diseaseDescriptionEl.textContent.trim();
+            if (!speechSupported) {
+                speakResultBtn.disabled = true;
+                speakResultBtn.textContent = getUiText('actions.read_aloud');
+                speakResultBtn.title = getUiText('alerts.speech_not_supported');
+                return;
+            }
+            speakResultBtn.disabled = !hasResultText;
+            speakResultBtn.title = '';
+            speakResultBtn.textContent = isSpeakingResult ? getUiText('actions.stop_reading') : getUiText('actions.read_aloud');
+        }
+
+        function stopResultSpeech() {
+            if (!speechSupported) return;
+            window.speechSynthesis.cancel();
+            isSpeakingResult = false;
+            updateSpeakButtonState();
+        }
+
+        function pickVoiceForLanguage(locale) {
+            const voices = window.speechSynthesis.getVoices();
+            if (!voices || !voices.length) return null;
+            const normalized = locale.toLowerCase();
+            const baseLang = normalized.split('-')[0];
+            return (
+                voices.find(v => v.lang && v.lang.toLowerCase() === normalized) ||
+                voices.find(v => v.lang && v.lang.toLowerCase().startsWith(baseLang)) ||
+                null
+            );
+        }
+
+        function toggleResultSpeech() {
+            if (!speechSupported) {
+                alert(getUiText('alerts.speech_not_supported'));
+                return;
+            }
+            const diseaseName = document.getElementById('diseaseName').textContent.trim();
+            const details = diseaseDescriptionEl.textContent.trim();
+            const textToRead = [diseaseName, details].filter(Boolean).join('. ');
+            if (!textToRead) return;
+            if (window.speechSynthesis.speaking || isSpeakingResult) {
+                stopResultSpeech();
+                return;
+            }
+            const utterance = new SpeechSynthesisUtterance(textToRead);
+            utterance.lang = getLanguageCode();
+            const voice = pickVoiceForLanguage(utterance.lang);
+            if (voice) {
+                utterance.voice = voice;
+            }
+            utterance.onstart = function() {
+                isSpeakingResult = true;
+                updateSpeakButtonState();
+            };
+            utterance.onend = function() {
+                isSpeakingResult = false;
+                updateSpeakButtonState();
+            };
+            utterance.onerror = function() {
+                isSpeakingResult = false;
+                updateSpeakButtonState();
+            };
+            window.speechSynthesis.cancel();
+            window.speechSynthesis.speak(utterance);
+        }
+
+        if (speechSupported) {
+            window.speechSynthesis.onvoiceschanged = updateSpeakButtonState;
+        }
+        window.addEventListener('beforeunload', stopResultSpeech);
+        updateSpeakButtonState();
+
         document.getElementById('diseaseImage').addEventListener('change', function(e) {
             const file = e.target.files[0];
             const nameEl = document.getElementById('selectedFileName');
@@ -212,8 +311,13 @@
             const fileInput = document.getElementById('diseaseImage');
             if (!fileInput.files[0]) { alert('Please select an image first'); return; }
 
-            const btn = document.querySelector('.btn');
+            const btn = document.getElementById('analyzeBtn');
             const loader = document.getElementById('analysisLoader');
+            stopResultSpeech();
+            document.getElementById('resultBox').classList.remove('show');
+            document.getElementById('diseaseName').textContent = '';
+            diseaseDescriptionEl.textContent = '';
+            updateSpeakButtonState();
             btn.disabled = true;
             loader.style.display = 'inline-block';
 
@@ -257,13 +361,18 @@
             document.getElementById('resultBox').classList.add('show');
             document.getElementById('diseaseName').innerHTML = '🦠 Disease Analysis Complete';
             document.getElementById('diseaseDescription').innerHTML = formatText(text);
+            updateSpeakButtonState();
         }
 
         function resetAnalysis() {
+            stopResultSpeech();
             document.getElementById('diseaseImage').value = '';
             document.getElementById('resultBox').classList.remove('show');
+            document.getElementById('diseaseName').textContent = '';
+            diseaseDescriptionEl.textContent = '';
             const nameEl = document.getElementById('selectedFileName');
             if (nameEl) nameEl.textContent = '';
+            updateSpeakButtonState();
         }
     </script>
 </body>

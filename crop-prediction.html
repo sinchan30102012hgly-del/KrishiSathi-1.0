@@ -327,6 +327,17 @@
             white-space: pre-wrap;
             word-wrap: break-word;
         }
+        .result-actions {
+            margin-top: 16px;
+            display: flex;
+            justify-content: flex-end;
+        }
+        .speak-btn {
+            margin-top: 0;
+            margin-left: 0;
+            font-size: 0.95em;
+            padding: 10px 18px;
+        }
         .footer-note {
             text-align: center;
             color: #666;
@@ -434,6 +445,9 @@
         <div id="cropResult" class="result-box">
             <h3 data-i18n="results.title">🌾 Crop Recommendations</h3>
             <div id="resultText" class="result-text"></div>
+            <div class="result-actions">
+                <button id="speakResultBtn" class="btn speak-btn" type="button" onclick="toggleResultSpeech()" data-i18n="actions.read_aloud">Read Aloud</button>
+            </div>
         </div>
 
         <p class="footer-note" data-i18n="footer.note">Note: This demo asks Gemini to obtain the weather and predict crops (Gemini cannot actually fetch live data and may hallucinate). For accurate predictions, consult local agricultural experts.</p>
@@ -455,6 +469,9 @@
                 "page.description": "Enter your location to get weather-based crop recommendations. Our AI analyzes local climate patterns to suggest the best crops for your area.",
                 "form.place": "Enter place name (city, village or region)",
                 "actions.predict": "Predict Crops",
+                "actions.read_aloud": "Read Aloud",
+                "actions.stop_reading": "Stop Reading",
+                "alerts.speech_not_supported": "Read aloud is not supported in your browser. Please use Chrome or Edge.",
                 "results.title": "🌾 Crop Recommendations",
                 "footer.note": "Note: This demo asks Gemini to obtain the weather and predict crops (Gemini cannot actually fetch live data and may hallucinate). For accurate predictions, consult local agricultural experts."
             },
@@ -507,6 +524,9 @@
                 var pkey = phNodes[j].getAttribute("data-i18n-placeholder");
                 var pval = dict[pkey] || translations.en[pkey];
                 if (pval) phNodes[j].setAttribute("placeholder", pval);
+            }
+            if (typeof updateSpeakButtonState === 'function') {
+                updateSpeakButtonState();
             }
         }
         (function () {
@@ -592,6 +612,10 @@
         // Voice Input Functionality
         let recognition = null;
         const voiceBtn = document.getElementById('voiceBtn');
+        const resultTextEl = document.getElementById('resultText');
+        const speakResultBtn = document.getElementById('speakResultBtn');
+        const speechSupported = 'speechSynthesis' in window && typeof SpeechSynthesisUtterance !== 'undefined';
+        let isSpeakingResult = false;
 
         function initSpeechRecognition() {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -611,6 +635,84 @@
             const langMap = { en: 'en-US', bn: 'bn-BD', hi: 'hi-IN' };
             return langMap[lang] || 'en-US';
         }
+
+        function getUiText(key) {
+            const lang = localStorage.getItem('lang') || 'en';
+            const dict = translations[lang] || translations.en;
+            return dict[key] || translations.en[key] || key;
+        }
+
+        function updateSpeakButtonState() {
+            if (!speakResultBtn) return;
+            const hasResultText = !!resultTextEl.textContent.trim();
+            if (!speechSupported) {
+                speakResultBtn.disabled = true;
+                speakResultBtn.textContent = getUiText('actions.read_aloud');
+                speakResultBtn.title = getUiText('alerts.speech_not_supported');
+                return;
+            }
+            speakResultBtn.disabled = !hasResultText;
+            speakResultBtn.title = '';
+            speakResultBtn.textContent = isSpeakingResult ? getUiText('actions.stop_reading') : getUiText('actions.read_aloud');
+        }
+
+        function stopResultSpeech() {
+            if (!speechSupported) return;
+            window.speechSynthesis.cancel();
+            isSpeakingResult = false;
+            updateSpeakButtonState();
+        }
+
+        function pickVoiceForLanguage(locale) {
+            const voices = window.speechSynthesis.getVoices();
+            if (!voices || !voices.length) return null;
+            const normalized = locale.toLowerCase();
+            const baseLang = normalized.split('-')[0];
+            return (
+                voices.find(v => v.lang && v.lang.toLowerCase() === normalized) ||
+                voices.find(v => v.lang && v.lang.toLowerCase().startsWith(baseLang)) ||
+                null
+            );
+        }
+
+        function toggleResultSpeech() {
+            if (!speechSupported) {
+                alert(getUiText('alerts.speech_not_supported'));
+                return;
+            }
+            const textToRead = resultTextEl.textContent.trim();
+            if (!textToRead) return;
+            if (window.speechSynthesis.speaking || isSpeakingResult) {
+                stopResultSpeech();
+                return;
+            }
+            const utterance = new SpeechSynthesisUtterance(textToRead);
+            utterance.lang = getLanguageCode();
+            const voice = pickVoiceForLanguage(utterance.lang);
+            if (voice) {
+                utterance.voice = voice;
+            }
+            utterance.onstart = function() {
+                isSpeakingResult = true;
+                updateSpeakButtonState();
+            };
+            utterance.onend = function() {
+                isSpeakingResult = false;
+                updateSpeakButtonState();
+            };
+            utterance.onerror = function() {
+                isSpeakingResult = false;
+                updateSpeakButtonState();
+            };
+            window.speechSynthesis.cancel();
+            window.speechSynthesis.speak(utterance);
+        }
+
+        if (speechSupported) {
+            window.speechSynthesis.onvoiceschanged = updateSpeakButtonState;
+        }
+        window.addEventListener('beforeunload', stopResultSpeech);
+        updateSpeakButtonState();
 
         function startVoiceInput() {
             if (!recognition) {
@@ -660,7 +762,10 @@
                 return;
             }
 
+            stopResultSpeech();
             resultEl.classList.remove('show');
+            resultTextEl.textContent = '';
+            updateSpeakButtonState();
             loader.style.display = 'inline-block';
             btn.disabled = true;
 
@@ -708,6 +813,7 @@ Return the answer in clear human-readable text. Respond in ${langName} only, usi
 
                 resultText.innerHTML = formatText(aiText);
                 resultEl.classList.add('show');
+                updateSpeakButtonState();
             } catch (err) {
                 alert('Error: ' + err.message);
                 console.error(err);
